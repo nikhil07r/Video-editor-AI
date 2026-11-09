@@ -1,0 +1,42 @@
+{
+  "name": "Cinematic Property Tour (16:9 4K)",
+  "aspectRatio": "16:9",
+  "width": 3840,
+  "height": 2160,
+  "fps": 24,
+  "defaultPacingSeconds": 3.5,
+  "lut": "RealEstate_Clean_Interior.cube",
+  "cameraMotion": "Slow_Cinematic_Glide",
+  "structure": [
+    {
+      "role": "Cinematic Drone Establishing Shot",
+      "duration": 4.0,
+      "textOverlay": { "type": "Cinematic_Minimal_Title", "position": "lower-left" }
+    },
+    {
+      "role": "Foyer & Architectural Living Room",
+      "duration": 3.5,
+      "textOverlay": { "type": "Subtle_Lower_Third", "position": "lower-left" }
+    },
+    {
+      "role": "Kitchen & Dining Showcase",
+      "duration": 3.5,
+      "textOverlay": { "type": "Feature_List_Callout", "position": "lower-right" }
+    },
+    {
+      "role": "Primary Suite & Master Bath",
+      "duration": 3.5,
+      "textOverlay": { "type": "Subtle_Lower_Third", "position": "lower-left" }
+    },
+    {
+      "role": "Backyard, Patio & Pool Evening",
+      "duration": 4.0,
+      "textOverlay": { "type": "Feature_List_Callout", "position": "lower-right" }
+    },
+    {
+      "role": "Outro Brand & Exclusive Listing Card",
+      "duration": 3.5,
+      "textOverlay": { "type": "Luxury_Outro_Card", "position": "center" }
+    }
+  ]
+}

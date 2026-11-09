@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Real Estate Video Editor</title>
+    <style>
+        :root {
+            --bg: #1e1e1e;
+            --panel-bg: #252526;
+            --card: #2d2d30;
+            --border: #3e3e42;
+            --accent: #007acc;
+            --gold: #d4af37;
+            --gold-glow: rgba(212, 175, 55, 0.25);
+            --text: #cccccc;
+            --text-bright: #ffffff;
+            --success: #89d185;
+            --danger: #f48771;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", Tahoma, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 14px; font-size: 12px; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .title { font-size: 14px; font-weight: 700; color: var(--gold); }
+        .status-pill { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #333; color: #888; }
+        .status-pill.online { background: rgba(137, 209, 133, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 10px; }
+        .card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #aaa; margin-bottom: 8px; }
+        label { display: block; margin-bottom: 4px; font-size: 11px; color: #bbb; }
+        textarea, input[type="text"], select { width: 100%; background: #1a1a1a; border: 1px solid var(--border); border-radius: 4px; color: #eee; padding: 6px 8px; font-size: 11px; outline: none; margin-bottom: 8px; }
+        textarea:focus, input[type="text"]:focus, select:focus { border-color: var(--gold); }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+        button { background: #383838; color: var(--text-bright); border: 1px solid var(--border); padding: 7px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.15s; }
+        button:hover { background: #484848; border-color: #666; }
+        button.btn-gold { background: linear-gradient(135deg, #d4af37, #aa820a); color: #000; font-weight: 700; border: none; }
+        button.btn-gold:hover { filter: brightness(1.1); }
+        button.btn-blue { background: #0e639c; color: #fff; border: none; }
+        button.btn-blue:hover { background: #1177bb; }
+        .preset-badge { display: inline-block; background: #333; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px; margin-bottom: 4px; border: 1px solid var(--border); }
+        .preset-badge:hover { border-color: var(--gold); color: var(--gold); }
+        .log-box { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 10px; height: 90px; overflow-y: auto; color: #89d185; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="title">✨ AI Real Estate Editor</span>
+        <span class="status-pill online" id="statusPill">Connecting...</span>
+    </div>
+
+    <!-- PRESET SELECTION -->
+    <div class="card">
+        <div class="card-title">1. Trending Real Estate Styles</div>
+        <div style="margin-bottom: 6px;">
+            <span class="preset-badge" onclick="setPreset('reel')">📱 9:16 Viral Reel</span>
+            <span class="preset-badge" onclick="setPreset('luxury')">🏰 16:9 4K Luxury Tour</span>
+            <span class="preset-badge" onclick="setPreset('modern')">🏢 Clean Minimalist</span>
+        </div>
+        <select id="aspectRatio">
+            <option value="reel">Vertical 9:16 (Instagram Reels / TikTok / Shorts)</option>
+            <option value="landscape" selected>Horizontal 16:9 4K (YouTube / Web Tour)</option>
+        </select>
+    </div>
+
+    <!-- PROPERTY SPECS -->
+    <div class="card">
+        <div class="card-title">2. Property Details & Pricing</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <div>
+                <label>Price Tag:</label>
+                <input type="text" id="propPrice" value="$2,850,000">
+            </div>
+            <div>
+                <label>Specs (Beds/Baths):</label>
+                <input type="text" id="propSpecs" value="5 Beds • 5.5 Baths • 5,200 SQ FT">
+            </div>
+        </div>
+        <label>Property Address / Title:</label>
+        <input type="text" id="propAddress" value="742 Evergreen Terrace, Beverly Hills, CA">
+
+        <div class="card-title" style="margin-top: 10px;">Insert Text Template Directly to Timeline:</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+            <button onclick="insertTemplate('Viral_Retention_Hook_Banner.mogrt', 0)">⚡ Viral Hook Banner (0s)</button>
+            <button onclick="insertTemplate('Just_Listed_Badge.mogrt', 1)">🔥 Just Listed Badge (1s)</button>
+            <button onclick="insertTemplate('Real_Estate_Hero_Title.mogrt', 2)">🏠 Luxury Estate Title (2s)</button>
+            <button onclick="insertTemplate('Real_Estate_Price_Tag.mogrt', 4)">💰 Price Tag Lower 3rd (4s)</button>
+            <button onclick="insertTemplate('Real_Estate_Property_Specs.mogrt', 6)">📋 Specs Badge (Beds/Baths) (6s)</button>
+            <button onclick="insertTemplate('Real_Estate_Feature_Callout.mogrt', 8)">✨ Amenity / Pool Callout (8s)</button>
+            <button onclick="insertTemplate('Save_Dream_Home_CTA.mogrt', 10)">❤️ Save for Dream Inspo (10s)</button>
+            <button onclick="insertTemplate('Social_Subscribe_Follow.mogrt', 12)">🔔 Follow for More Tours (12s)</button>
+            <button onclick="insertTemplate('Real_Estate_Agent_Outro.mogrt', 14)">👤 Broker & Agent Outro (14s)</button>
+        </div>
+    </div>
+
+    <!-- PROMPT & MEDIA -->
+    <div class="card">
+        <div class="card-title">3. AI Director Prompt</div>
+        <textarea id="aiPrompt" rows="2" placeholder="e.g. Cut clips every 2.5s, add smooth Ken Burns slow zoom, apply Clean Interior grade">Generate modern real estate showcase with smooth Ken Burns push-in, 2.5s pacing, and Clean Interior grade</textarea>
+
+        <label>Footage Files (separated by commas):</label>
+        <textarea id="videoPaths" rows="2">C:/cllg/video_20261031_175554.mp4, C:/cllg/video_20261031_191136.mp4</textarea>
+
+        <div class="btn-group">
+            <button class="btn-gold" id="btnAutoCut">⚡ Auto-Cut & Build Timeline</button>
+            <button class="btn-blue" id="btnAddCallout">🏷️ Add Property Badges</button>
+        </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="card">
+        <div class="card-title">Real-time Activity Log</div>
+        <div class="log-box" id="logBox">AI Real Estate Engine ready. Docked side-by-side with Premiere Pro.</div>
+    </div>
+
+    <script src="js/CSInterface.js"></script>
+    <script src="js/panel.js"></script>
+</body>
+</html>

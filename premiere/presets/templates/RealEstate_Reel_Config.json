@@ -1,0 +1,42 @@
+{
+  "name": "Luxury Real Estate Vertical Reel (9:16)",
+  "aspectRatio": "9:16",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "defaultPacingSeconds": 2.2,
+  "lut": "RealEstate_Luxury_Warm.cube",
+  "cameraMotion": "Ken_Burns_Slow_Push",
+  "structure": [
+    {
+      "role": "Hook / Exterior Aerial",
+      "duration": 2.5,
+      "textOverlay": { "type": "Hero_Price_Badge", "position": "top-center" }
+    },
+    {
+      "role": "Grand Entrance / Living Room",
+      "duration": 2.2,
+      "textOverlay": { "type": "Spec_Callout", "text": "4 Beds • 4.5 Baths • 4,200 SQ FT" }
+    },
+    {
+      "role": "Chef's Gourmet Kitchen",
+      "duration": 2.0,
+      "textOverlay": { "type": "Feature_Pill", "text": "Marble Island • Custom Cabinetry" }
+    },
+    {
+      "role": "Primary Luxury Suite",
+      "duration": 2.2,
+      "textOverlay": { "type": "Feature_Pill", "text": "Private Balcony • Spa Ensuite" }
+    },
+    {
+      "role": "Outdoor Oasis / Pool",
+      "duration": 2.5,
+      "textOverlay": { "type": "Feature_Pill", "text": "Zero-Edge Pool & Sunset Views" }
+    },
+    {
+      "role": "Agent & Brokerage Outro",
+      "duration": 2.8,
+      "textOverlay": { "type": "Agent_Contact_Card", "position": "center" }
+    }
+  ]
+}

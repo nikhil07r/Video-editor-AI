@@ -115,14 +115,43 @@ class AIDirector {
         }
 
         // Add dynamic AI title if prompt indicates
-        recipe.texts.push({
-            text: customOverrides.title || "AI DIRECTED EDIT",
-            startTime: 0.5,
-            duration: 2.5,
-            fontSize: 9.0,
-            color: [1, 1, 1],
-            y: -0.6
-        });
+        const isRealEstate = lower.includes('real estate') || lower.includes('property') || lower.includes('estate') || lower.includes('house') || lower.includes('luxury');
+
+        if (isRealEstate) {
+            recipe.texts.push({
+                text: customOverrides.title || "MODERN LUXURY ESTATE",
+                startTime: 0.2,
+                duration: 2.8,
+                fontSize: 9.5,
+                color: [0.95, 0.85, 0.45], // Luxury Gold
+                y: -0.65
+            });
+            recipe.texts.push({
+                text: customOverrides.price || "$2,850,000 | 4 BEDS • 4.5 BATHS",
+                startTime: 3.0,
+                duration: 3.0,
+                fontSize: 7.5,
+                color: [1, 1, 1], // Pure White
+                y: -0.60
+            });
+            recipe.texts.push({
+                text: customOverrides.features || "CHEF'S KITCHEN • INFINITY POOL",
+                startTime: 6.2,
+                duration: 3.0,
+                fontSize: 7.0,
+                color: [0.85, 0.95, 1.0], // Ice Blue
+                y: -0.60
+            });
+        } else {
+            recipe.texts.push({
+                text: customOverrides.title || "AI DIRECTED EDIT",
+                startTime: 0.5,
+                duration: 2.5,
+                fontSize: 9.0,
+                color: [1, 1, 1],
+                y: -0.6
+            });
+        }
 
         return recipe;
     }
