@@ -3,112 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Real Estate Video Editor</title>
-    <style>
-        :root {
-            --bg: #1e1e1e;
-            --panel-bg: #252526;
-            --card: #2d2d30;
-            --border: #3e3e42;
-            --accent: #007acc;
-            --gold: #d4af37;
-            --gold-glow: rgba(212, 175, 55, 0.25);
-            --text: #cccccc;
-            --text-bright: #ffffff;
-            --success: #89d185;
-            --danger: #f48771;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", Tahoma, sans-serif; }
-        body { background: var(--bg); color: var(--text); padding: 14px; font-size: 12px; }
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-        .title { font-size: 14px; font-weight: 700; color: var(--gold); }
-        .status-pill { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #333; color: #888; }
-        .status-pill.online { background: rgba(137, 209, 133, 0.2); color: var(--success); border: 1px solid var(--success); }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 10px; }
-        .card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #aaa; margin-bottom: 8px; }
-        label { display: block; margin-bottom: 4px; font-size: 11px; color: #bbb; }
-        textarea, input[type="text"], select { width: 100%; background: #1a1a1a; border: 1px solid var(--border); border-radius: 4px; color: #eee; padding: 6px 8px; font-size: 11px; outline: none; margin-bottom: 8px; }
-        textarea:focus, input[type="text"]:focus, select:focus { border-color: var(--gold); }
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
-        button { background: #383838; color: var(--text-bright); border: 1px solid var(--border); padding: 7px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.15s; }
-        button:hover { background: #484848; border-color: #666; }
-        button.btn-gold { background: linear-gradient(135deg, #d4af37, #aa820a); color: #000; font-weight: 700; border: none; }
-        button.btn-gold:hover { filter: brightness(1.1); }
-        button.btn-blue { background: #0e639c; color: #fff; border: none; }
-        button.btn-blue:hover { background: #1177bb; }
-        .preset-badge { display: inline-block; background: #333; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px; margin-bottom: 4px; border: 1px solid var(--border); }
-        .preset-badge:hover { border-color: var(--gold); color: var(--gold); }
-        .log-box { background: #141414; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: monospace; font-size: 10px; height: 90px; overflow-y: auto; color: #89d185; white-space: pre-wrap; }
-    </style>
+    <title>AI Real Estate Studio for Premiere Pro</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="header">
-        <span class="title">✨ AI Real Estate Editor</span>
-        <span class="status-pill online" id="statusPill">Connecting...</span>
-    </div>
-
-    <!-- PRESET SELECTION -->
-    <div class="card">
-        <div class="card-title">1. Trending Real Estate Styles</div>
-        <div style="margin-bottom: 6px;">
-            <span class="preset-badge" onclick="setPreset('reel')">📱 9:16 Viral Reel</span>
-            <span class="preset-badge" onclick="setPreset('luxury')">🏰 16:9 4K Luxury Tour</span>
-            <span class="preset-badge" onclick="setPreset('modern')">🏢 Clean Minimalist</span>
-        </div>
-        <select id="aspectRatio">
-            <option value="reel">Vertical 9:16 (Instagram Reels / TikTok / Shorts)</option>
-            <option value="landscape" selected>Horizontal 16:9 4K (YouTube / Web Tour)</option>
-        </select>
-    </div>
-
-    <!-- PROPERTY SPECS -->
-    <div class="card">
-        <div class="card-title">2. Property Details & Pricing</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-            <div>
-                <label>Price Tag:</label>
-                <input type="text" id="propPrice" value="$2,850,000">
+    <div class="panel-container">
+        <!-- TOP APP HEADER -->
+        <header class="panel-header">
+            <div class="header-left">
+                <span class="header-icon">⚡</span>
+                <span class="header-title">AI Real Estate Studio</span>
             </div>
-            <div>
-                <label>Specs (Beds/Baths):</label>
-                <input type="text" id="propSpecs" value="5 Beds • 5.5 Baths • 5,200 SQ FT">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div class="status-badge" id="statusBadge">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Connecting...</span>
+                </div>
+                <button onclick="window.location.reload()" title="Reload Extension UI" style="background:rgba(0,240,255,0.1); border:1px solid rgba(0,240,255,0.3); color:#00F0FF; border-radius:4px; padding:3px 7px; cursor:pointer; font-size:11px;">🔄 Reload</button>
+            </div>
+        </header>
+
+        <!-- NAVIGATION TABS -->
+        <div class="panel-tabs">
+            <button class="tab-btn active" onclick="switchTab('footage')">📁 Footage</button>
+            <button class="tab-btn" onclick="switchTab('details')">🏷️ Listing</button>
+            <button class="tab-btn" onclick="switchTab('effects')">🎬 Motion & FX</button>
+            <button class="tab-btn" onclick="switchTab('graphics')">✨ Graphics</button>
+        </div>
+
+        <div class="panel-body">
+            <!-- TAB 1: FOOTAGE FOLDER & SOURCES -->
+            <div id="tab-footage" class="tab-pane active">
+                <div class="card">
+                    <div class="card-title">1. Video Footage Folder</div>
+                    <label>Enter or Paste Video Folder Path:</label>
+                    <div class="input-with-button">
+                        <input type="text" id="footageFolderInput" value="C:\cllg" placeholder="e.g. C:\cllg or C:\Users\YourName\Videos">
+                        <button class="btn-action" id="btnScanFolder" onclick="scanFootageFolder()">🔍 Scan</button>
+                    </div>
+
+                    <!-- Quick Folder Presets -->
+                    <div class="preset-chips">
+                        <span class="chip" onclick="setFolder('C:\\cllg')">C:\cllg</span>
+                        <span class="chip" onclick="setFolder('C:\\VideoEditorAI')">C:\VideoEditorAI</span>
+                        <span class="chip" onclick="setFolder('C:\\PREMIERE_PRO_TOOLKIT')">Toolkit</span>
+                    </div>
+
+                    <!-- Scanned Files Feedback Badge -->
+                    <div class="scan-result-box" id="scanResultBox">
+                        <div class="scan-status-line">
+                            <span id="scanStatusText">Found 2 video clips ready to edit</span>
+                        </div>
+                        <div class="clip-chips-list" id="clipChipsList">
+                            <span class="clip-chip">video_20261031_175554.mp4</span>
+                            <span class="clip-chip">video_20261031_191136.mp4</span>
+                        </div>
+                    </div>
+
+                    <button class="btn-secondary full-width" style="margin-top: 10px;" onclick="useProjectClips()">
+                        🎬 Or Use Videos Currently in Premiere Project Bin
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Video Format & Timeline Setup</div>
+                    <div class="ratio-selector-grid">
+                        <label class="ratio-card active" onclick="selectRatio('9:16')">
+                            <input type="radio" name="aspectRatio" value="9:16" checked>
+                            <span class="ratio-icon">📱</span>
+                            <span class="ratio-name">9:16 Vertical Reel</span>
+                            <span class="ratio-sub">Instagram • TikTok • Shorts</span>
+                        </label>
+                        <label class="ratio-card" onclick="selectRatio('16:9')">
+                            <input type="radio" name="aspectRatio" value="16:9">
+                            <span class="ratio-icon">🖥️</span>
+                            <span class="ratio-name">16:9 Landscape 4K</span>
+                            <span class="ratio-sub">YouTube • Luxury Website</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: PROPERTY LISTING DETAILS -->
+            <div id="tab-details" class="tab-pane">
+                <div class="card">
+                    <div class="card-title">Property Pricing & Specifications</div>
+                    
+                    <label>Price Tag (Currency / Amount):</label>
+                    <input type="text" id="propPrice" value="₹15 CR" placeholder="e.g. ₹15 CR or $2,850,000">
+
+                    <label>Property Address / Title:</label>
+                    <input type="text" id="propTitle" value="smart city delhi airport" placeholder="e.g. smart city delhi airport">
+
+                    <label>Property Specs & Unique Features:</label>
+                    <input type="text" id="propSpecs" value="per family one floor with private lift" placeholder="e.g. 4 Beds • 4.5 Baths • 4,200 SQ FT">
+
+                    <label>Agent / Brokerage Contact Info:</label>
+                    <input type="text" id="propAgent" value="+91 98765 43210 • Luxury Homes Delhi" placeholder="Agent Name & Phone">
+                </div>
+            </div>
+
+            <!-- TAB 3: KEYFRAMES, MASKING & PREMIERE ABILITIES -->
+            <div id="tab-effects" class="tab-pane">
+                <div class="card">
+                    <div class="card-title">Keyframing Motion (Ken Burns)</div>
+                    <label>Select Keyframe Animation Style:</label>
+                    <select id="keyframeStyle">
+                        <option value="alternating" selected>✨ Alternating (Push-In on Clip 1, Pull-Out on Clip 2)</option>
+                        <option value="push_in">🔍 Smooth Ken Burns Push-In (100% → 114%)</option>
+                        <option value="pull_out">🔎 Smooth Pull-Out (114% → 100%)</option>
+                        <option value="none">⛔ No Motion (Static Keyframes)</option>
+                    </select>
+
+                    <label style="margin-top: 10px;">Cuts Pacing per Shot:</label>
+                    <div class="slider-row">
+                        <input type="range" id="pacingSlider" min="1.5" max="4.5" step="0.5" value="2.0" oninput="updatePacingDisplay(this.value)">
+                        <span class="slider-val" id="pacingDisplay">2.0s</span>
+                    </div>
+                    <span class="helper-text" id="pacingHelper">Fast-paced viral hook rhythm for Reels</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Masking & Framing</div>
+                    <label>Aspect Mask Style:</label>
+                    <select id="maskStyle">
+                        <option value="none" selected>Clean Full Frame (No Crop)</option>
+                        <option value="letterbox">Cinematic 2.35:1 Letterbox Bar Mask</option>
+                        <option value="vignette">Soft Vignette Focus Mask</option>
+                    </select>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Cinematic Color Grade (3D LUTs)</div>
+                    <label>Select Lumetri Grade:</label>
+                    <select id="lutSelect">
+                        <option value="RealEstate_Luxury_Warm.cube" selected>🌅 Luxury Warm Amber (Golden Hour Glow)</option>
+                        <option value="RealEstate_Clean_Interior.cube">🏠 Clean Interior White (No Yellow Cast)</option>
+                        <option value="RealEstate_Moody_Modern.cube">🏢 Moody Modern Architectural</option>
+                        <option value="none">Original Camera Profile</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- TAB 4: TEXT TEMPLATES & GRAPHICS -->
+            <div id="tab-graphics" class="tab-pane">
+                <div class="card">
+                    <div class="card-title">1-Click Insert Text Template to Timeline (V2)</div>
+                    <p class="helper-text" style="margin-bottom: 10px;">Inserts native Motion Graphics Templates with your property details:</p>
+                    
+                    <div class="graphics-btn-grid">
+                        <button class="btn-graphic" onclick="insertTemplate('Real_Estate_Hero_Title.mogrt', 0)">
+                            <span class="icon">🏠</span>
+                            <div class="text-group">
+                                <span class="primary">Hero Property Title</span>
+                                <span class="sub">Delhi Airport (0s)</span>
+                            </div>
+                        </button>
+                        <button class="btn-graphic" onclick="insertTemplate('Real_Estate_Price_Tag.mogrt', 2)">
+                            <span class="icon">💰</span>
+                            <div class="text-group">
+                                <span class="primary">Price Badge</span>
+                                <span class="sub">₹15 CR (2s)</span>
+                            </div>
+                        </button>
+                        <button class="btn-graphic" onclick="insertTemplate('Real_Estate_Property_Specs.mogrt', 4)">
+                            <span class="icon">📋</span>
+                            <div class="text-group">
+                                <span class="primary">Specs Lower 3rd</span>
+                                <span class="sub">Private Lift (4s)</span>
+                            </div>
+                        </button>
+                        <button class="btn-graphic" onclick="insertTemplate('Real_Estate_Feature_Callout.mogrt', 6)">
+                            <span class="icon">✨</span>
+                            <div class="text-group">
+                                <span class="primary">Feature Callout</span>
+                                <span class="sub">One Floor / Family (6s)</span>
+                            </div>
+                        </button>
+                        <button class="btn-graphic" onclick="insertTemplate('Just_Listed_Badge.mogrt', 1)">
+                            <span class="icon">🔥</span>
+                            <div class="text-group">
+                                <span class="primary">Just Listed Ribbon</span>
+                                <span class="sub">Urgency Badge (1s)</span>
+                            </div>
+                        </button>
+                        <button class="btn-graphic" onclick="insertTemplate('Real_Estate_Agent_Outro.mogrt', 8)">
+                            <span class="icon">👤</span>
+                            <div class="text-group">
+                                <span class="primary">Agent Outro Card</span>
+                                <span class="sub">Contact & Logo (8s)</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-        <label>Property Address / Title:</label>
-        <input type="text" id="propAddress" value="742 Evergreen Terrace, Beverly Hills, CA">
 
-        <div class="card-title" style="margin-top: 10px;">Insert Text Template Directly to Timeline:</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
-            <button onclick="insertTemplate('Viral_Retention_Hook_Banner.mogrt', 0)">⚡ Viral Hook Banner (0s)</button>
-            <button onclick="insertTemplate('Just_Listed_Badge.mogrt', 1)">🔥 Just Listed Badge (1s)</button>
-            <button onclick="insertTemplate('Real_Estate_Hero_Title.mogrt', 2)">🏠 Luxury Estate Title (2s)</button>
-            <button onclick="insertTemplate('Real_Estate_Price_Tag.mogrt', 4)">💰 Price Tag Lower 3rd (4s)</button>
-            <button onclick="insertTemplate('Real_Estate_Property_Specs.mogrt', 6)">📋 Specs Badge (Beds/Baths) (6s)</button>
-            <button onclick="insertTemplate('Real_Estate_Feature_Callout.mogrt', 8)">✨ Amenity / Pool Callout (8s)</button>
-            <button onclick="insertTemplate('Save_Dream_Home_CTA.mogrt', 10)">❤️ Save for Dream Inspo (10s)</button>
-            <button onclick="insertTemplate('Social_Subscribe_Follow.mogrt', 12)">🔔 Follow for More Tours (12s)</button>
-            <button onclick="insertTemplate('Real_Estate_Agent_Outro.mogrt', 14)">👤 Broker & Agent Outro (14s)</button>
-        </div>
-    </div>
-
-    <!-- PROMPT & MEDIA -->
-    <div class="card">
-        <div class="card-title">3. AI Director Prompt</div>
-        <textarea id="aiPrompt" rows="2" placeholder="e.g. Cut clips every 2.5s, add smooth Ken Burns slow zoom, apply Clean Interior grade">Generate modern real estate showcase with smooth Ken Burns push-in, 2.5s pacing, and Clean Interior grade</textarea>
-
-        <label>Footage Files (separated by commas):</label>
-        <textarea id="videoPaths" rows="2">C:/cllg/video_20261031_175554.mp4, C:/cllg/video_20261031_191136.mp4</textarea>
-
-        <div class="btn-group">
-            <button class="btn-gold" id="btnAutoCut">⚡ Auto-Cut & Build Timeline</button>
-            <button class="btn-blue" id="btnAddCallout">🏷️ Add Property Badges</button>
-        </div>
-    </div>
-
-    <!-- LOGS -->
-    <div class="card">
-        <div class="card-title">Real-time Activity Log</div>
-        <div class="log-box" id="logBox">AI Real Estate Engine ready. Docked side-by-side with Premiere Pro.</div>
+        <!-- MASTER ACTION BAR (STICKY AT BOTTOM) -->
+        <footer class="panel-footer">
+            <button class="btn-master" id="btnMasterAutoEdit" onclick="executeMasterAutoEdit()">
+                <span class="btn-master-icon">⚡</span>
+                <span class="btn-master-text">AUTO-EDIT TIMELINE IN PREMIERE</span>
+            </button>
+            <div class="live-status-log" id="statusLog">
+                Ready. Click to auto-cut videos, apply keyframes & build timeline.
+            </div>
+        </footer>
     </div>
 
     <script src="js/CSInterface.js"></script>

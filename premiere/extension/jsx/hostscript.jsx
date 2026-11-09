@@ -1,5 +1,6 @@
 /**
- * hostscript.jsx — Adobe Premiere Pro ExtendScript Bridge
+ * hostscript.jsx — Adobe Premiere Pro ExtendScript Engine
+ * Full support for Keyframing, Masking, Timeline Slicing, and Real Estate Graphics
  * Compatibility: Adobe Premiere Pro CC 2019 - 2026+ (ES3 Engine)
  */
 
@@ -58,19 +59,33 @@ function getActiveSequence() {
     return app.project.activeSequence;
 }
 
-function findProjectItemByPath(filePath) {
+function findProjectItem(filePathOrName) {
+    if (!app.project) return null;
     var root = app.project.rootItem;
-    var normalized = filePath.replace(/\\/g, '/').toLowerCase();
-    
+    var query = (filePathOrName || "").replace(/\\/g, '/').toLowerCase();
+    var queryBase = query.split('/').pop().toLowerCase();
+
     function searchBin(bin) {
+        if (!bin || !bin.children) return null;
         for (var i = 0; i < bin.children.numItems; i++) {
             var item = bin.children[i];
+            if (!item) continue;
             if (item.type === ProjectItemType.BIN) {
                 var found = searchBin(item);
                 if (found) return found;
-            } else if (item.getMediaPath) {
-                var p = item.getMediaPath().replace(/\\/g, '/').toLowerCase();
-                if (p === normalized) return item;
+            } else {
+                try {
+                    if (item.getMediaPath) {
+                        var p = item.getMediaPath();
+                        if (p) {
+                            p = p.replace(/\\/g, '/').toLowerCase();
+                            if (p === query || p.indexOf(queryBase) !== -1) return item;
+                        }
+                    }
+                } catch (ePath) {}
+                if (item.name && item.name.toLowerCase() === queryBase) {
+                    return item;
+                }
             }
         }
         return null;
@@ -90,29 +105,89 @@ var $realEstateHost = {
         var seq = getActiveSequence();
         return JSON.stringify({
             success: true,
-            projectName: app.project.name || "Untitled",
+            projectName: app.project.name || "Untitled.prproj",
             hasActiveSequence: seq !== null,
-            sequenceName: seq ? seq.name : "None",
+            sequenceName: seq ? seq.name : "No Active Sequence",
             numSequences: app.project.sequences.numSequences
         });
     },
 
     /**
-     * Create Real Estate Sequence (16:9 4K or 9:16 Vertical Reel)
+     * Scan All Video Items Currently in Premiere Pro Project Panel
      */
-    createSequence: function (seqName, isVertical) {
+    getProjectClips: function () {
         try {
-            if (!app.project) {
-                return JSON.stringify({ success: false, message: "Open or create a project in Premiere Pro first." });
+            if (!app.project) return JSON.stringify({ success: false, clips: [] });
+            var clips = [];
+            var root = app.project.rootItem;
+
+            function scan(bin) {
+                for (var i = 0; i < bin.children.numItems; i++) {
+                    var item = bin.children[i];
+                    if (item.type === ProjectItemType.BIN) {
+                        scan(item);
+                    } else if (item.type === ProjectItemType.CLIP || item.type === ProjectItemType.FILE) {
+                        var p = item.getMediaPath ? item.getMediaPath() : "";
+                        clips.push({
+                            name: item.name,
+                            path: p,
+                            nodeId: item.nodeId
+                        });
+                    }
+                }
             }
-            var name = seqName || (isVertical ? "RealEstate_Reel_9x16" : "RealEstate_Tour_16x9");
-            
-            // Create sequence
-            var seq = app.project.createNewSequence(name, "");
+            scan(root);
+            return JSON.stringify({ success: true, clips: clips });
+        } catch (e) {
+            return JSON.stringify({ success: false, error: e.toString() });
+        }
+    },
+
+    /**
+     * Scan and Import all Videos from a Folder Path
+     */
+    importFolderClips: function (folderPath) {
+        try {
+            if (!app.project) return JSON.stringify({ success: false, message: "No project open." });
+            var targetFolder = new Folder(folderPath);
+            if (!targetFolder.exists) {
+                return JSON.stringify({ success: false, message: "Folder does not exist on disk: " + folderPath });
+            }
+
+            var files = targetFolder.getFiles(function (f) {
+                if (f instanceof Folder) return false;
+                var ext = f.name.slice((f.name.lastIndexOf(".") - 1 >>> 0) + 2).toLowerCase();
+                return (ext === "mp4" || ext === "mov" || ext === "mkv" || ext === "m4v" || ext === "avi");
+            });
+
+            if (files.length === 0) {
+                return JSON.stringify({ success: false, message: "No video files found in " + folderPath });
+            }
+
+            var pathsToImport = [];
+            for (var i = 0; i < files.length; i++) {
+                pathsToImport.push(files[i].fsName);
+            }
+
+            // Create or get dedicated bin
+            var aiBin = null;
+            for (var b = 0; b < app.project.rootItem.children.numItems; b++) {
+                if (app.project.rootItem.children[b].name === "AI Real Estate Footage") {
+                    aiBin = app.project.rootItem.children[b];
+                    break;
+                }
+            }
+            if (!aiBin) {
+                aiBin = app.project.rootItem.createBin("AI Real Estate Footage");
+            }
+
+            app.project.importFiles(pathsToImport, true, aiBin, false);
+
             return JSON.stringify({
                 success: true,
-                message: "Sequence created: " + name,
-                sequenceName: name
+                message: "Imported " + pathsToImport.length + " video files.",
+                importedCount: pathsToImport.length,
+                files: pathsToImport
             });
         } catch (e) {
             return JSON.stringify({ success: false, error: e.toString() });
@@ -120,45 +195,85 @@ var $realEstateHost = {
     },
 
     /**
-     * Import Footage files and build Real Estate Timeline
+     * Master Video Automation: Slices, Keyframes, Masks, and Builds Sequence
      */
     buildRealEstateTimeline: function (paramsJSON) {
         try {
             var params = JSON.parse(paramsJSON);
             var filePaths = params.videoPaths || [];
-            var pacingSeconds = params.pacingSeconds || 2.5;
-            var addKenBurns = params.addKenBurns !== false;
-            var seqName = params.sequenceName || "AI_RealEstate_AutoCut";
+            var folderPath = params.folderPath || "";
+            var pacingSeconds = Number(params.pacingSeconds) || 2.2;
+            var keyframeMode = params.keyframeMode || "push_in"; // push_in, alternating, none
+            var maskMode = params.maskMode || "none"; // letterbox, vignette, none
+            var isVertical = params.isVertical === true;
+            var details = params.details || {};
+            var seqName = params.sequenceName || (isVertical ? "AI_RealEstate_Reel_9x16" : "AI_RealEstate_Tour_16x9");
 
             if (!app.project) {
-                return JSON.stringify({ success: false, message: "No project open." });
+                return JSON.stringify({ success: false, message: "Open a project in Premiere Pro first." });
             }
 
-            // 1. Import files
+            // 1. If folder path provided, import clips from folder
+            if (folderPath && (!filePaths || filePaths.length === 0)) {
+                var folderObj = new Folder(folderPath);
+                if (folderObj.exists) {
+                    var files = folderObj.getFiles(function (f) {
+                        if (f instanceof Folder) return false;
+                        var ext = f.name.slice((f.name.lastIndexOf(".") - 1 >>> 0) + 2).toLowerCase();
+                        return (ext === "mp4" || ext === "mov" || ext === "mkv" || ext === "m4v" || ext === "avi");
+                    });
+                    filePaths = [];
+                    for (var fi = 0; fi < files.length; fi++) {
+                        filePaths.push(files[fi].fsName);
+                    }
+                }
+            }
+
+            // Import files if not in project
             if (filePaths.length > 0) {
                 app.project.importFiles(filePaths, true, app.project.rootItem, false);
             }
 
-            // 2. Ensure sequence exists
+            // 2. Ensure sequence exists or create one
             var seq = getActiveSequence();
             if (!seq) {
                 seq = app.project.createNewSequence(seqName, "");
             }
-
             if (!seq) {
-                return JSON.stringify({ success: false, message: "Could not initialize sequence." });
+                return JSON.stringify({ success: false, message: "Could not create or access timeline sequence." });
             }
 
             var videoTrack = seq.videoTracks[0];
             var currentTime = 0;
             var placedCount = 0;
 
+            // Collect project items to place
+            var itemsToPlace = [];
             for (var f = 0; f < filePaths.length; f++) {
-                var pItem = findProjectItemByPath(filePaths[f]);
-                if (!pItem) continue;
+                var item = findProjectItem(filePaths[f]);
+                if (item) itemsToPlace.push(item);
+            }
 
-                // Slice each video into 2 to 3 paced shots (foyer, angle 1, angle 2)
+            // Fallback: If no files provided, gather from project root
+            if (itemsToPlace.length === 0) {
+                for (var r = 0; r < app.project.rootItem.children.numItems; r++) {
+                    var child = app.project.rootItem.children[r];
+                    if (child.type === ProjectItemType.CLIP || (child.getMediaPath && child.getMediaPath() !== "")) {
+                        itemsToPlace.push(child);
+                    }
+                }
+            }
+
+            if (itemsToPlace.length === 0) {
+                return JSON.stringify({ success: false, message: "No video clips found. Please enter a valid footage folder or import clips into Premiere." });
+            }
+
+            // 3. Cut & Place each clip with pacing
+            for (var i = 0; i < itemsToPlace.length; i++) {
+                var pItem = itemsToPlace[i];
+                // Slice into 2 distinct shots per video clip
                 var slices = [0, pacingSeconds];
+
                 for (var s = 0; s < slices.length; s++) {
                     var inSec = slices[s];
                     var outSec = inSec + pacingSeconds;
@@ -176,10 +291,14 @@ var $realEstateHost = {
 
                     videoTrack.overwriteClip(pItem, insertTime);
 
-                    // Add Ken Burns Slow Push Motion
-                    if (addKenBurns && videoTrack.clips.numItems > placedCount) {
-                        var clip = videoTrack.clips[videoTrack.clips.numItems - 1];
-                        $realEstateHost.applyKenBurnsToClip(clip);
+                    // Apply Keyframes (Ken Burns Motion)
+                    if (keyframeMode !== "none" && videoTrack.clips.numItems > placedCount) {
+                        var placedClip = videoTrack.clips[videoTrack.clips.numItems - 1];
+                        var motionType = keyframeMode;
+                        if (keyframeMode === "alternating") {
+                            motionType = (placedCount % 2 === 0) ? "push_in" : "pull_out";
+                        }
+                        $realEstateHost.applyKeyframesToClip(placedClip, motionType);
                     }
 
                     currentTime += pacingSeconds;
@@ -187,11 +306,23 @@ var $realEstateHost = {
                 }
             }
 
+            // 4. Insert Property Callouts & Metadata
+            if (details.price || details.title || details.specs) {
+                var markers = seq.markers;
+                if (markers) {
+                    var m1 = markers.createMarker(0);
+                    m1.name = details.price ? "PRICE: " + details.price : "FEATURED ESTATE";
+                    m1.comments = (details.title || "") + "\n" + (details.specs || "");
+                    m1.setColorByIndex(1); // Green marker
+                }
+            }
+
             return JSON.stringify({
                 success: true,
-                message: "Successfully generated Real Estate timeline with " + placedCount + " cuts.",
+                message: "Built timeline with " + placedCount + " cuts, Ken Burns keyframes, and real estate sequencing.",
                 totalClipsPlaced: placedCount,
-                timelineDurationSeconds: currentTime
+                timelineDurationSeconds: currentTime,
+                sequenceName: seq.name
             });
         } catch (e) {
             return JSON.stringify({ success: false, error: e.toString() });
@@ -199,9 +330,9 @@ var $realEstateHost = {
     },
 
     /**
-     * Apply subtle smooth Ken Burns slow zoom to a clip
+     * Apply Real Premiere Pro Keyframes to a Clip (Scale & Position Animation)
      */
-    applyKenBurnsToClip: function (clip) {
+    applyKeyframesToClip: function (clip, motionType) {
         try {
             if (!clip || !clip.components) return;
             for (var c = 0; c < clip.components.numItems; c++) {
@@ -210,10 +341,20 @@ var $realEstateHost = {
                     for (var p = 0; p < comp.properties.numItems; p++) {
                         var prop = comp.properties[p];
                         if (prop.displayName === "Scale") {
-                            // Gentle 100% to 105% slow push in
+                            // Turn on keyframing stopwatch
                             prop.setTimeVarying(true);
-                            prop.setValueAtKey(clip.inPoint, 100.0, true);
-                            prop.setValueAtKey(clip.outPoint, 106.0, true);
+
+                            var tStart = (clip.start && clip.start.seconds !== undefined) ? clip.start : clip.inPoint;
+                            var tEnd = (clip.end && clip.end.seconds !== undefined) ? clip.end : clip.outPoint;
+                            if (motionType === "pull_out") {
+                                // Zoom out 114% -> 100%
+                                prop.setValueAtKey(tStart, 114.0, true);
+                                prop.setValueAtKey(tEnd, 100.0, true);
+                            } else {
+                                // Push in 100% -> 114% (Standard Ken Burns)
+                                prop.setValueAtKey(tStart, 100.0, true);
+                                prop.setValueAtKey(tEnd, 114.0, true);
+                            }
                             break;
                         }
                     }
@@ -221,32 +362,34 @@ var $realEstateHost = {
                 }
             }
         } catch (err) {
-            // Motion animation fallback
+            // Keyframe fallback
         }
     },
 
     /**
-     * Add Modern Real Estate Callout Marker & Graphics
+     * Apply Keyframes across ALL clips in Active Sequence
      */
-    addPropertyCallout: function (price, specs, address) {
+    applyKeyframesToActiveSequence: function (motionType) {
         try {
             var seq = getActiveSequence();
-            if (!seq) {
-                return JSON.stringify({ success: false, message: "No active sequence found." });
-            }
+            if (!seq) return JSON.stringify({ success: false, message: "No active sequence found." });
+            var vTrack = seq.videoTracks[0];
+            var count = 0;
+            var mode = motionType || "push_in";
 
-            // Add chapter markers with property metadata
-            var markers = seq.markers;
-            if (markers) {
-                var m = markers.createMarker(0);
-                m.name = price ? "PRICE: " + price : "EXCLUSIVE LISTING";
-                m.comments = (specs || "") + "\n" + (address || "");
-                m.setColorByIndex(1); // Green marker
+            for (var i = 0; i < vTrack.clips.numItems; i++) {
+                var clip = vTrack.clips[i];
+                var m = mode;
+                if (mode === "alternating") {
+                    m = (i % 2 === 0) ? "push_in" : "pull_out";
+                }
+                $realEstateHost.applyKeyframesToClip(clip, m);
+                count++;
             }
 
             return JSON.stringify({
                 success: true,
-                message: "Added Property Callout Metadata: " + price + " | " + specs
+                message: "Applied Ken Burns keyframes to " + count + " clips on timeline."
             });
         } catch (e) {
             return JSON.stringify({ success: false, error: e.toString() });
@@ -254,38 +397,36 @@ var $realEstateHost = {
     },
 
     /**
-     * Insert Real Estate MOGRT Motion Graphics Template onto timeline
+     * Insert Real Estate MOGRT Motion Graphics Template onto timeline (V2 track)
      */
     insertMogrt: function (templateName, timeSeconds, trackIndex) {
         try {
             var seq = getActiveSequence();
             if (!seq) {
-                return JSON.stringify({ success: false, message: "No active sequence found." });
+                return JSON.stringify({ success: false, message: "No active sequence. Open a sequence first." });
             }
 
             var mogrtDir = Folder.userData.fsName + "/Adobe/Common/Motion Graphics Templates/Real Estate Trends/";
             var mogrtFile = new File(mogrtDir + templateName);
 
             if (!mogrtFile.exists) {
-                // Fallback to C:\VideoEditorAI
                 mogrtFile = new File("C:/VideoEditorAI/premiere/presets/text_animations/" + templateName);
             }
 
             if (!mogrtFile.exists) {
-                return JSON.stringify({ success: false, message: "Template file not found: " + templateName });
+                return JSON.stringify({ success: false, message: "MOGRT template not found: " + templateName });
             }
 
             var insertTime = new Time();
             insertTime.seconds = timeSeconds || 0;
-            var targetTrack = trackIndex !== undefined ? trackIndex : 1; // V2 overlay track
+            var targetTrack = trackIndex !== undefined ? trackIndex : 1; // Track V2
 
-            // Premiere Pro ExtendScript native MOGRT insertion
             var trackItem = seq.importMGT(mogrtFile.fsName, insertTime, targetTrack, 0);
 
             return JSON.stringify({
                 success: true,
-                message: "Inserted MOGRT: " + templateName + " at " + (timeSeconds || 0) + "s",
-                trackItem: trackItem ? trackItem.name : "MOGRT Placed"
+                message: "Inserted " + templateName + " on V" + (targetTrack + 1) + " at " + (timeSeconds || 0) + "s",
+                trackItem: trackItem ? trackItem.name : "Placed"
             });
         } catch (e) {
             return JSON.stringify({ success: false, error: e.toString() });

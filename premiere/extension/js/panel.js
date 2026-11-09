@@ -1,125 +1,261 @@
 var csInterface = new CSInterface();
-var logBox = document.getElementById('logBox');
-var statusPill = document.getElementById('statusPill');
+var currentScannedFiles = [];
+var activeRatio = '9:16';
 
-function log(msg) {
-    if (!logBox) return;
-    logBox.textContent += '\n' + msg;
-    logBox.scrollTop = logBox.scrollHeight;
-}
-
-function checkHostConnection() {
-    csInterface.evalScript('$realEstateHost.ping()', function (result) {
-        try {
-            var data = JSON.parse(result);
-            if (data.success) {
-                statusPill.textContent = 'CONNECTED: ' + data.projectName;
-                statusPill.className = 'status-pill online';
-                log('✓ Connected to Premiere Pro Project: ' + data.projectName);
-            } else {
-                statusPill.textContent = 'OFFLINE: Open a Project';
-                statusPill.className = 'status-pill';
-                log('Notice: ' + data.message);
-            }
-        } catch (e) {
-            statusPill.textContent = 'CEP Ready';
-            log('EvalScript returned: ' + result);
-        }
-    });
-}
-
-function setPreset(type) {
-    var promptEl = document.getElementById('aiPrompt');
-    var ratioEl = document.getElementById('aspectRatio');
-    if (type === 'reel') {
-        ratioEl.value = 'reel';
-        promptEl.value = 'Fast-paced vertical luxury real estate reel: 2.0s cuts, Ken Burns slow zoom, Warm Golden Hour grade, high-energy hook';
-        log('Preset Loaded: 9:16 Viral Real Estate Reel');
-    } else if (type === 'luxury') {
-        ratioEl.value = 'landscape';
-        promptEl.value = 'Cinematic 4K luxury estate tour: 3.5s smooth cuts, slow push-in, Clean Interior grade, elegant aesthetic';
-        log('Preset Loaded: 16:9 4K Luxury Tour');
-    } else if (type === 'modern') {
-        ratioEl.value = 'landscape';
-        promptEl.value = 'Minimalist modern architectural tour: 3.0s pacing, deep black contrast, high dynamic range';
-        log('Preset Loaded: Modern Minimalist');
+function setStatus(text, isOnline) {
+    var badge = document.getElementById('statusBadge');
+    var txt = document.getElementById('statusText');
+    if (txt) txt.textContent = text;
+    if (badge) {
+        if (isOnline) badge.classList.add('online');
+        else badge.classList.remove('online');
     }
 }
 
-// Button Auto Cut
-document.getElementById('btnAutoCut').addEventListener('click', function () {
-    var rawPaths = document.getElementById('videoPaths').value;
-    var paths = rawPaths.split(/[\n,]+/).map(function(s) { return s.trim(); }).filter(Boolean);
-    var isVertical = document.getElementById('aspectRatio').value === 'reel';
-    var pacing = isVertical ? 2.0 : 3.0;
+function logStatus(msg) {
+    var logEl = document.getElementById('statusLog');
+    if (logEl) {
+        logEl.textContent = msg;
+        logEl.style.color = '#00F0FF';
+    }
+}
 
-    log('▶ Building timeline with ' + paths.length + ' video assets...');
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-pane').forEach(function(pane) {
+        pane.classList.remove('active');
+    });
 
-    var params = {
-        videoPaths: paths,
-        pacingSeconds: pacing,
-        addKenBurns: true,
-        sequenceName: isVertical ? 'RealEstate_Reel_9x16' : 'RealEstate_Tour_16x9'
-    };
+    var activeBtn = document.querySelector('.tab-btn[onclick*="' + tabId + '"]');
+    if (activeBtn) activeBtn.classList.add('active');
 
-    var scriptCall = '$realEstateHost.buildRealEstateTimeline(' + JSON.stringify(JSON.stringify(params)) + ')';
-    csInterface.evalScript(scriptCall, function (result) {
+    var activePane = document.getElementById('tab-' + tabId);
+    if (activePane) activePane.classList.add('active');
+}
+
+function selectRatio(ratio) {
+    activeRatio = ratio;
+    document.querySelectorAll('.ratio-card').forEach(function(card) {
+        var input = card.querySelector('input');
+        if (input && input.value === ratio) {
+            card.classList.add('active');
+            input.checked = true;
+        } else {
+            card.classList.remove('active');
+        }
+    });
+
+    var slider = document.getElementById('pacingSlider');
+    if (ratio === '9:16') {
+        slider.value = 2.0;
+        updatePacingDisplay(2.0);
+    } else {
+        slider.value = 3.5;
+        updatePacingDisplay(3.5);
+    }
+}
+
+function updatePacingDisplay(val) {
+    var disp = document.getElementById('pacingDisplay');
+    var helper = document.getElementById('pacingHelper');
+    if (disp) disp.textContent = val + 's';
+    if (helper) {
+        if (Number(val) <= 2.2) {
+            helper.textContent = '⚡ Fast-paced viral hook rhythm (Reels / TikTok)';
+        } else {
+            helper.textContent = '🏰 Elegant slow cinematic pacing (4K Tour / YouTube)';
+        }
+    }
+}
+
+function setFolder(folderPath) {
+    var input = document.getElementById('footageFolderInput');
+    if (input) {
+        input.value = folderPath;
+        scanFootageFolder();
+    }
+}
+
+function scanFootageFolder() {
+    var input = document.getElementById('footageFolderInput');
+    var folderPath = input ? input.value.trim() : '';
+
+    if (!folderPath) {
+        logStatus('Please enter a folder path.');
+        return;
+    }
+
+    logStatus('Scanning folder: ' + folderPath + '...');
+    currentScannedFiles = [];
+
+    // 1. Try Node.js fs scan if available in CEP
+    var scanned = [];
+    try {
+        if (typeof require !== 'undefined') {
+            var fs = require('fs');
+            var path = require('path');
+            if (fs.existsSync(folderPath)) {
+                var files = fs.readdirSync(folderPath);
+                var videoExts = ['.mp4', '.mov', '.mkv', '.m4v', '.avi'];
+                files.forEach(function(f) {
+                    var ext = path.extname(f).toLowerCase();
+                    if (videoExts.indexOf(ext) !== -1) {
+                        scanned.push(path.join(folderPath, f).replace(/\\/g, '/'));
+                    }
+                });
+            }
+        }
+    } catch (e) {
+        console.log('Node scan fallback:', e.message);
+    }
+
+    if (scanned.length > 0) {
+        updateScannedUI(scanned);
+        logStatus('✅ Found ' + scanned.length + ' video files ready.');
+        return;
+    }
+
+    // 2. Fallback to ExtendScript folder scan
+    var call = '$realEstateHost.importFolderClips(' + JSON.stringify(folderPath) + ')';
+    csInterface.evalScript(call, function(res) {
         try {
-            var res = JSON.parse(result);
-            if (res.success) {
-                log('🎉 SUCCESS: ' + res.message);
-                log('Total Cuts Placed: ' + res.totalClipsPlaced);
-                log('Duration: ' + res.timelineDurationSeconds + 's');
+            var data = JSON.parse(res);
+            if (data.success && data.files) {
+                updateScannedUI(data.files);
+                logStatus('✅ ' + data.message);
             } else {
-                log('❌ Error: ' + (res.error || res.message));
+                logStatus(data.message || 'No video files found.');
+                updateScannedUI([]);
+            }
+        } catch (err) {
+            logStatus('Scan error: ' + res);
+        }
+    });
+}
+
+function updateScannedUI(files) {
+    currentScannedFiles = files;
+    var statusText = document.getElementById('scanStatusText');
+    var chipsList = document.getElementById('clipChipsList');
+
+    if (!statusText || !chipsList) return;
+
+    if (files.length === 0) {
+        statusText.textContent = 'No video clips detected yet.';
+        statusText.style.color = '#F59E0B';
+        chipsList.innerHTML = '<span style="color:#777; font-size:10px;">Check folder path or choose another directory.</span>';
+    } else {
+        statusText.textContent = '✅ ' + files.length + ' video clips ready to edit:';
+        statusText.style.color = '#10B981';
+        chipsList.innerHTML = files.map(function(f) {
+            var name = f.split('/').pop().split('\\').pop();
+            return '<span class="clip-chip">' + name + '</span>';
+        }).join('');
+    }
+}
+
+function useProjectClips() {
+    logStatus('Reading clips from Premiere Pro Project Panel...');
+    csInterface.evalScript('$realEstateHost.getProjectClips()', function(res) {
+        try {
+            var data = JSON.parse(res);
+            if (data.success && data.clips && data.clips.length > 0) {
+                var paths = data.clips.map(function(c) { return c.path || c.name; });
+                updateScannedUI(paths);
+                logStatus('✅ Loaded ' + paths.length + ' clips from Premiere Project Panel.');
+            } else {
+                logStatus('No video clips found in active Premiere project bins.');
             }
         } catch (e) {
-            log('Result: ' + result);
+            logStatus('Could not read project clips: ' + res);
         }
     });
-});
+}
 
-// Button Add Callout
-document.getElementById('btnAddCallout').addEventListener('click', function () {
-    var price = document.getElementById('propPrice').value;
-    var specs = document.getElementById('propSpecs').value;
-    var address = document.getElementById('propAddress').value;
+function executeMasterAutoEdit() {
+    var btn = document.getElementById('btnMasterAutoEdit');
+    btn.style.opacity = '0.7';
+    logStatus('⏳ Slicing clips, applying keyframes & building timeline...');
 
-    log('Adding property badges & callouts to timeline...');
+    var folder = document.getElementById('footageFolderInput').value.trim();
+    var price = document.getElementById('propPrice').value.trim();
+    var title = document.getElementById('propTitle').value.trim();
+    var specs = document.getElementById('propSpecs').value.trim();
+    var agent = document.getElementById('propAgent').value.trim();
 
-    var scriptCall = '$realEstateHost.addPropertyCallout(' +
-        JSON.stringify(price) + ', ' +
-        JSON.stringify(specs) + ', ' +
-        JSON.stringify(address) + ')';
+    var pacing = Number(document.getElementById('pacingSlider').value) || 2.0;
+    var keyframeMode = document.getElementById('keyframeStyle').value;
+    var maskMode = document.getElementById('maskStyle').value;
+    var isVertical = (activeRatio === '9:16');
 
-    csInterface.evalScript(scriptCall, function (result) {
+    var payload = {
+        folderPath: folder,
+        videoPaths: currentScannedFiles,
+        pacingSeconds: pacing,
+        keyframeMode: keyframeMode,
+        maskMode: maskMode,
+        isVertical: isVertical,
+        sequenceName: isVertical ? 'AI_RealEstate_Reel_9x16' : 'AI_RealEstate_Tour_16x9',
+        details: {
+            price: price,
+            title: title,
+            specs: specs,
+            agent: agent
+        }
+    };
+
+    var call = '$realEstateHost.buildRealEstateTimeline(' + JSON.stringify(JSON.stringify(payload)) + ')';
+    csInterface.evalScript(call, function(res) {
+        btn.style.opacity = '1';
         try {
-            var res = JSON.parse(result);
-            log(res.message);
-        } catch (e) {
-            log('Result: ' + result);
+            var data = JSON.parse(res);
+            if (data.success) {
+                logStatus('🎉 ' + data.message);
+                alert(data.message + '\nTotal Cuts: ' + data.totalClipsPlaced + '\nSequence: ' + data.sequenceName);
+            } else {
+                logStatus('❌ ' + (data.error || data.message));
+                alert('Notice: ' + (data.error || data.message));
+            }
+        } catch (err) {
+            logStatus('Response: ' + res);
         }
     });
-});
+}
 
 function insertTemplate(templateName, timeSec) {
-    log('Inserting ' + templateName + ' at ' + timeSec + 's on V2 track...');
+    logStatus('Inserting ' + templateName + ' at ' + timeSec + 's on V2 track...');
     var call = '$realEstateHost.insertMogrt(' + JSON.stringify(templateName) + ', ' + timeSec + ', 1)';
     csInterface.evalScript(call, function(res) {
         try {
             var data = JSON.parse(res);
-            if (data.success) {
-                log('✓ ' + data.message);
-            } else {
-                log('Notice: ' + (data.error || data.message));
-            }
+            logStatus(data.message || 'MOGRT placed.');
         } catch (e) {
-            log('Result: ' + res);
+            logStatus('Result: ' + res);
         }
     });
 }
 
-// Run connection check on load
-window.addEventListener('load', function () {
-    setTimeout(checkHostConnection, 500);
+function checkHostConnection() {
+    csInterface.evalScript('$realEstateHost.ping()', function(res) {
+        try {
+            var data = JSON.parse(res);
+            if (data.success) {
+                setStatus(data.projectName, true);
+            } else {
+                setStatus('No Project Open', false);
+            }
+        } catch (e) {
+            setStatus('CEP Connected', true);
+        }
+    });
+}
+
+// Initial Auto-Scan on Load
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        checkHostConnection();
+        scanFootageFolder();
+    }, 400);
 });

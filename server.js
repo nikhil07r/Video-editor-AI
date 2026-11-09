@@ -4,6 +4,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const AIDirector = require('./ai_director');
 const CapCutEngine = require('./capcut_engine');
+const premiereGenerator = require('./premiere_generator');
 
 const PORT = 4500;
 const director = new AIDirector();
@@ -65,29 +66,110 @@ const HTML_PAGE = `<!DOCTYPE html>
         button { flex: 1; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; }
         .btn-capcut { background: linear-gradient(135deg, var(--accent), var(--purple)); color: #fff; }
         .btn-capcut:hover { opacity: 0.92; transform: translateY(-1px); }
-        .btn-premiere { background: linear-gradient(135deg, var(--gold), #bd7b00); color: #000; }
-        .btn-premiere:hover { opacity: 0.92; transform: translateY(-1px); }
+        .btn-premiere { background: linear-gradient(135deg, var(--gold), #bd7b00); color: #000; font-weight: 800; font-size: 1.05rem; box-shadow: 0 4px 20px var(--gold-glow); }
+        .btn-premiere:hover { opacity: 0.95; transform: translateY(-1px); filter: brightness(1.1); }
         .btn-secondary { background: #1a2233; color: var(--text); border: 1px solid var(--border); }
         .btn-secondary:hover { background: #222d42; }
 
-        .status-box { background: #080a0f; border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: monospace; font-size: 0.85rem; color: #a2b0cb; min-height: 80px; max-height: 180px; overflow-y: auto; white-space: pre-wrap; }
+        .status-box { background: #080a0f; border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: monospace; font-size: 0.85rem; color: #a2b0cb; min-height: 90px; max-height: 220px; overflow-y: auto; white-space: pre-wrap; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>AI Video Editor Hub</h1>
-            <p>Dual Automation Engine for CapCut Desktop & Adobe Premiere Pro 2026</p>
+            <p>Direct Video Automation Engine for CapCut Desktop & Adobe Premiere Pro 2026</p>
         </header>
 
         <!-- TABS -->
         <div class="tabs">
-            <button class="tab-btn active tab-capcut" onclick="showTab('capcut')">🎬 CapCut AI Engine</button>
-            <button class="tab-btn tab-premiere" onclick="showTab('premiere')">🏰 Premiere Pro Real Estate Suite</button>
+            <button class="tab-btn tab-premiere active" onclick="showTab('premiere')">🏰 Premiere Pro Real Estate Suite</button>
+            <button class="tab-btn tab-capcut" onclick="showTab('capcut')">🎬 CapCut AI Engine</button>
+        </div>
+
+        <!-- PREMIERE PRO REAL ESTATE SECTION -->
+        <div id="tab-premiere" class="tab-content active">
+            <div class="card premiere">
+                <h2>🏰 Premiere Pro Real Estate Auto-Director</h2>
+                
+                <!-- 1. FOOTAGE FOLDER -->
+                <label>📁 Video Footage Folder Path (Scans all clips automatically):</label>
+                <div style="display:flex; gap:10px; margin-bottom:12px;">
+                    <input type="text" id="prFolder" value="C:\cllg" placeholder="e.g. C:\cllg or C:\Users\nikhil\Videos" style="margin-bottom:0; flex:1;">
+                    <button class="btn-secondary" onclick="scanPrFolder()" style="max-width:140px; padding:10px;">🔍 Check Clips</button>
+                </div>
+                <div id="prScanBadge" style="font-size:0.8rem; color:var(--success); font-weight:600; margin-bottom:14px;">
+                    ✅ C:\cllg verified — Ready to slice and edit clips
+                </div>
+
+                <!-- 2. LISTING DETAILS -->
+                <div class="grid-3">
+                    <div>
+                        <label>Price Tag:</label>
+                        <input type="text" id="prPrice" value="₹15 CR">
+                    </div>
+                    <div>
+                        <label>Property Title / Address:</label>
+                        <input type="text" id="prAddress" value="smart city delhi airport">
+                    </div>
+                    <div>
+                        <label>Specs & Highlights:</label>
+                        <input type="text" id="prSpecs" value="per family one floor with private lift">
+                    </div>
+                </div>
+
+                <!-- 3. PREMIERE ABILITIES (KEYFRAMES & MASKING) -->
+                <div class="grid-3">
+                    <div>
+                        <label>Video Format & Aspect Ratio:</label>
+                        <select id="prFormat">
+                            <option value="9:16" selected>📱 9:16 Vertical Reel (1080 × 1920)</option>
+                            <option value="16:9">🖥️ 16:9 4K Luxury Tour (1920 × 1080 / 4K)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Keyframing Motion (Ken Burns):</label>
+                        <select id="prKeyframe">
+                            <option value="alternating" selected>✨ Alternating Push-In & Pull-Out</option>
+                            <option value="push_in">🔍 Ken Burns Push-In (100% → 114%)</option>
+                            <option value="pull_out">🔎 Pull-Out Wide Reveal (114% → 100%)</option>
+                            <option value="none">⛔ Static (No Keyframes)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Shot Pacing (Cuts Duration):</label>
+                        <select id="prPacing">
+                            <option value="2.0" selected>⚡ 2.0s Fast Mobile Reel</option>
+                            <option value="2.5">🎬 2.5s Dynamic Showcase</option>
+                            <option value="3.5">🏰 3.5s Elegant Cinematic Tour</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="feature-chips">
+                    <div class="chip gold active">🎥 Real Scale Keyframing (100% → 114%)</div>
+                    <div class="chip gold active">🏷️ ₹15 CR Price Badge Injection</div>
+                    <div class="chip gold active">✨ Auto-Slice Multi-Cut Sequencing</div>
+                    <div class="chip gold active">🎚️ Native Premiere Pro XML Timeline</div>
+                </div>
+
+                <!-- BIG MASTER ACTION BUTTON -->
+                <div class="btn-row">
+                    <button class="btn-premiere" id="btnRunPremiereEdit" onclick="runPremiereAutoEdit()">
+                        ⚡ RUN AI AUTO-EDIT & OPEN IN PREMIERE PRO
+                    </button>
+                    <button class="btn-secondary" onclick="launchPremierePanel()" style="max-width:260px;">
+                        🚀 Launch Premiere Panel
+                    </button>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--muted); margin-top: 10px; text-align:center;">
+                    💡 This directly generates your timeline with cuts, Ken Burns keyframes, price tags, and opens it automatically in Premiere Pro!
+                </p>
+            </div>
         </div>
 
         <!-- CAPCUT SECTION -->
-        <div id="tab-capcut" class="tab-content active">
+        <div id="tab-capcut" class="tab-content">
             <div class="card capcut">
                 <h2>💬 CapCut Prompt & Settings</h2>
                 <label>Tell the AI how to edit your video:</label>
@@ -111,84 +193,10 @@ const HTML_PAGE = `<!DOCTYPE html>
             </div>
         </div>
 
-        <!-- PREMIERE PRO REAL ESTATE SECTION -->
-        <div id="tab-premiere" class="tab-content">
-            <div class="card premiere">
-                <h2>🏰 Real Estate Premiere Pro Director</h2>
-                
-                <div class="grid-2">
-                    <div>
-                        <label>Target Format & Style:</label>
-                        <select id="prFormat">
-                            <option value="reel">📱 9:16 Viral Reel (TikTok / Instagram / Shorts) — 2.2s cuts</option>
-                            <option value="landscape" selected>🏰 16:9 4K Luxury Property Tour (YouTube / Showcase) — 3.5s cuts</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Cinematic Real Estate LUT (Color Grade):</label>
-                        <select id="prLut">
-                            <option value="RealEstate_Luxury_Warm.cube">🌅 Luxury Warm (Golden Hour & Ambient Glow)</option>
-                            <option value="RealEstate_Clean_Interior.cube" selected>🏠 Clean Interior (Crisp Bright Whites, No Yellow Mud)</option>
-                            <option value="RealEstate_Moody_Modern.cube">🏢 Moody Modern (Architectural Drama & Contrast)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid-3">
-                    <div>
-                        <label>Listing Price:</label>
-                        <input type="text" id="prPrice" value="$3,250,000">
-                    </div>
-                    <div>
-                        <label>Property Specs:</label>
-                        <input type="text" id="prSpecs" value="5 Beds • 5.5 Baths • 5,400 SQ FT">
-                    </div>
-                    <div>
-                        <label>Property Address / Title:</label>
-                        <input type="text" id="prAddress" value="Beverly Hills Modern Estate">
-                    </div>
-                </div>
-
-                <div class="feature-chips">
-                    <div class="chip gold active">🎥 Ken Burns Smooth Slow Push-In</div>
-                    <div class="chip gold active">🏷️ Automatic Property Badge Markers</div>
-                    <div class="chip gold active">✨ Lumetri Color Grade Integration</div>
-                    <div class="chip gold active">🎚️ Multi-Track Essential Sequencing</div>
-                    <div class="chip gold active">🔊 4x Royalty-Free Cinematic SFX</div>
-                    <div class="chip gold active">⚡ 9x Viral Engagement MOGRTs</div>
-                </div>
-
-                <div class="card" style="background: #0d121c; margin-top: 10px; margin-bottom: 14px;">
-                    <div style="font-size: 0.85rem; font-weight: 700; color: var(--gold); margin-bottom: 6px;">🔥 9x Installed MOGRTs (Drag from Essential Graphics or 1-Click in Panel):</div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.75rem; color: #bbb;">
-                        <span style="background: #1a2233; padding: 3px 8px; border-radius: 4px;">⚡ Viral Retention Hook</span>
-                        <span style="background: #1a2233; padding: 3px 8px; border-radius: 4px;">🔥 Just Listed Badge</span>
-                        <span style="background: #1a2233; padding: 3px 8px; border-radius: 4px;">🏠 Luxury Estate Title</span>
-                        <span style="background: #1a2233; padding: 3px 8px; border-radius: 4px;">💰 Price Tag Lower 3rd</span>
-                        <span style="background: #1a2233; padding: 3px 8px; border-radius: 4px;">📋 Beds/Baths Specs</span>
-                        <span style="background: #1a2233; padding: 3px 8px; border-radius: 4px;">✨ Amenity/Pool Callout</span>
-                        <span style="background: #1a2233; padding: 3px 8px; border-radius: 4px;">❤️ Save for Inspo CTA</span>
-                        <span style="background: #1a2233; padding: 3px 8px; border-radius: 4px;">🔔 Follow for More Tours</span>
-                        <span style="background: #1a2233; padding: 3px 8px; border-radius: 4px;">👤 Agent & Broker Outro</span>
-                    </div>
-                </div>
-
-                <label>Footage Files (separated by commas):</label>
-                <textarea id="videoPathsPr" rows="1">C:/cllg/video_20261031_175554.mp4, C:/cllg/video_20261031_191136.mp4</textarea>
-
-                <div class="btn-row">
-                    <button class="btn-premiere" id="btnLaunchPremiere">🚀 Open Premiere Pro & In-App Extension</button>
-                </div>
-                <p style="font-size: 0.8rem; color: var(--muted); margin-top: 8px;">
-                    💡 <b>Side-by-Side Collaboration:</b> Inside Premiere Pro, go to <b>Window > Extensions > AI Real Estate Video Editor</b> to control edits and fine-tune live on your timeline!
-                </p>
-            </div>
-        </div>
-
         <!-- EXECUTION LOGS -->
         <div class="card">
             <h2 style="color: #bbb; font-size: 1rem;">🖥️ Live Activity & Status Logs</h2>
-            <div class="status-box" id="statusBox">All systems operational. CapCut Engine & Premiere Pro Extension ready.</div>
+            <div class="status-box" id="statusBox">All systems operational. Premiere Pro Auto-Editor & CapCut Engine ready.</div>
         </div>
     </div>
 
@@ -211,6 +219,84 @@ const HTML_PAGE = `<!DOCTYPE html>
             }
         }
 
+        // Scan folder check
+        async function scanPrFolder() {
+            const folder = document.getElementById('prFolder').value.trim();
+            log('Scanning folder: ' + folder + '...');
+            try {
+                const res = await fetch('/api/premiere/scan-folder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ folderPath: folder })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('prScanBadge').textContent = '✅ ' + data.count + ' video files ready in ' + folder;
+                    log('✅ Found ' + data.count + ' video files: ' + data.files.slice(0, 3).map(f => f.split(/[\\\\/]/).pop()).join(', ') + '...');
+                } else {
+                    document.getElementById('prScanBadge').textContent = '⚠️ ' + data.error;
+                    log('⚠️ ' + data.error);
+                }
+            } catch (e) {
+                log('❌ Error: ' + e.message);
+            }
+        }
+
+        // MASTER AUTO-EDIT FOR PREMIERE PRO
+        async function runPremiereAutoEdit() {
+            const btn = document.getElementById('btnRunPremiereEdit');
+            btn.textContent = '⏳ SLICING & KEYFRAMING IN PREMIERE...';
+            btn.style.opacity = '0.7';
+
+            const folder = document.getElementById('prFolder').value.trim();
+            const price = document.getElementById('prPrice').value.trim();
+            const title = document.getElementById('prAddress').value.trim();
+            const specs = document.getElementById('prSpecs').value.trim();
+            const format = document.getElementById('prFormat').value;
+            const keyframe = document.getElementById('prKeyframe').value;
+            const pacing = document.getElementById('prPacing').value;
+
+            log('🚀 Starting Premiere Pro AI Auto-Director...');
+            log('📁 Reading footage from: ' + folder);
+            log('🏷️ Listing: ' + title + ' | ' + price + ' | ' + specs);
+            log('🎬 Applying ' + (format === '9:16' ? '9:16 Vertical Reel' : '16:9 Landscape') + ' with ' + keyframe + ' keyframes...');
+
+            try {
+                const res = await fetch('/api/premiere/auto-edit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        folderPath: folder,
+                        title: title,
+                        aspectRatio: format,
+                        pacingSeconds: pacing,
+                        keyframeMode: keyframe,
+                        details: { price, title, specs }
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    log('========================================================');
+                    log('🎉 PREMIERE PRO TIMELINE GENERATED SUCCESSFULLY!');
+                    log('Sequence: ' + data.sequenceName);
+                    log('Total Slices & Cuts: ' + data.totalCuts);
+                    log('Duration: ' + data.durationSeconds + 's');
+                    log('Aspect Ratio: ' + data.aspectRatio);
+                    log('Keyframes: Applied Scale Push-In / Pull-Out on every cut');
+                    log('Project Saved to: ' + data.xmlPath);
+                    log('🚀 Adobe Premiere Pro 2026 Launched & Timeline Loaded!');
+                    log('========================================================');
+                } else {
+                    log('❌ ERROR: ' + data.error);
+                }
+            } catch (e) {
+                log('❌ Error: ' + e.message);
+            } finally {
+                btn.textContent = '⚡ RUN AI AUTO-EDIT & OPEN IN PREMIERE PRO';
+                btn.style.opacity = '1';
+            }
+        }
+
         // CapCut Actions
         document.getElementById('btnEditCapcut').addEventListener('click', async () => {
             const prompt = document.getElementById('promptCapcut').value;
@@ -224,32 +310,30 @@ const HTML_PAGE = `<!DOCTYPE html>
                 });
                 const data = await res.json();
                 if (data.success) {
-                    log('✅ Project Created: ' + data.projectName + ' (Duration: ' + data.timelineDurationSeconds + 's)');
-                    log('Features: Roto, Mask, Zoom In, Sharpen applied!');
+                    log('✅ CapCut Project Created: ' + data.projectName + ' (Duration: ' + data.timelineDurationSeconds + 's)');
                 } else {
                     log('❌ ' + data.error);
                 }
             } catch (e) { log('❌ ' + e.message); }
         });
 
-        document.getElementById('btnLaunchCapcut').addEventListener('click', async () => {
-            log('Launching CapCut...');
-            await fetch('/api/launch-capcut', { method: 'POST' });
-        });
-
-        // Premiere Pro Actions
-        document.getElementById('btnLaunchPremiere').addEventListener('click', async () => {
+        async function launchPremierePanel() {
             log('🚀 Launching Adobe Premiere Pro 2026...');
             try {
                 const res = await fetch('/api/premiere/launch', { method: 'POST' });
                 const data = await res.json();
                 if (data.success) {
-                    log('✅ Premiere Pro launching!');
-                    log('📌 To open the AI panel: In Premiere Pro, click Window > Extensions > AI Real Estate Video Editor.');
+                    log('✅ Premiere Pro launched!');
+                    log('📌 Open AI panel inside Premiere: Window > Extensions > AI Real Estate Video Editor');
                 } else {
                     log('❌ ' + data.error);
                 }
             } catch (e) { log('❌ ' + e.message); }
+        }
+
+        document.getElementById('btnLaunchCapcut').addEventListener('click', async () => {
+            log('Launching CapCut...');
+            await fetch('/api/launch-capcut', { method: 'POST' });
         });
     </script>
 </body>
@@ -308,16 +392,52 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // PREMIERE PRO LAUNCH
+    // PREMIERE PRO: FOLDER SCAN
+    if (req.method === 'POST' && req.url === '/api/premiere/scan-folder') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                const { folderPath } = JSON.parse(body);
+                const files = premiereGenerator.scanFolder(folderPath || 'C:/cllg');
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, count: files.length, files }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
+    // PREMIERE PRO: AUTO-EDIT MASTER ENGINE
+    if (req.method === 'POST' && req.url === '/api/premiere/auto-edit') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                const payload = JSON.parse(body);
+                const result = premiereGenerator.buildAndOpenInPremiere(payload);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
+    // PREMIERE PRO: LAUNCH APPLICATION
     if (req.method === 'POST' && req.url === '/api/premiere/launch') {
         const pproExe = 'C:\\Program Files\\Adobe\\Adobe Premiere Pro 2026\\Adobe Premiere Pro.exe';
         if (fs.existsSync(pproExe)) {
             spawn(pproExe, [], { detached: true, stdio: 'ignore' }).unref();
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: true, message: 'Adobe Premiere Pro launched.' }));
+            res.end(JSON.stringify({ success: true }));
         } else {
             res.writeHead(404, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: 'Adobe Premiere Pro.exe not found at standard path.' }));
+            res.end(JSON.stringify({ success: false, error: 'Adobe Premiere Pro 2026 not found.' }));
         }
         return;
     }
