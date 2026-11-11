@@ -118,8 +118,50 @@ const HTML_PAGE = `<!DOCTYPE html>
                     </div>
                 </div>
 
-                <!-- 3. PREMIERE ABILITIES (KEYFRAMES & MASKING) -->
+                <!-- 3. SCRIPT & PROMPT AI DIRECTOR -->
+                <div style="margin-top:14px; margin-bottom:14px;">
+                    <label>🧠 AI Script & Prompt Director (Auto-detects beats, middle/end trims, audio & effects):</label>
+                    <textarea id="prScript" rows="3" placeholder="e.g. Hook: Grand entrance with push-in and whoosh transition. Scene 1: Middle part of living room, mute camera audio. Scene 2: Private lift, Specs: 1 floor per family. Outro: Price ₹15 CR.">Hook: Grand exterior entrance with fast push-in and whoosh transition. Title: Smart City Delhi Airport
+Scene 1: Middle part of living room, mute camera audio, luxury warm grade. Price: ₹15 CR
+Scene 2: Middle section of private elevator, Specs: Per family one floor with private lift
+Outro: Ending view of balcony terrace, contact broker card.</textarea>
+                </div>
+
+                <!-- 4. PREMIERE ABILITIES (KEYFRAMES, TRIMS & AUDIO) -->
                 <div class="grid-3">
+                    <div>
+                        <label>Trim Shot Selection:</label>
+                        <select id="prSection">
+                            <option value="middle" selected>✨ Middle Part (Smoothest Highlight)</option>
+                            <option value="start">🎯 First Part (Establishing Hook)</option>
+                            <option value="end">🏁 Ending Part (Climax / Reveal)</option>
+                            <option value="two_cuts">⚡ 2 Slices per Clip (Dynamic Pacing)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Audio Engine Mode:</label>
+                        <select id="prAudioMode">
+                            <option value="mute" selected>🔇 Mute B-Roll Camera Audio (Video Only)</option>
+                            <option value="both">🔊 Keep Original Camera Audio + Video</option>
+                            <option value="audio_only">🎙️ Audio Only (No Video Track)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Cinematic 3D LUT Color Grade:</label>
+                        <select id="prLut">
+                            <option value="RealEstate_Luxury_Warm.cube" selected>🌅 Luxury Warm Amber (Golden Hour)</option>
+                            <option value="RealEstate_Clean_Interior.cube">🏠 Clean Interior Daylight (Pure Whites)</option>
+                            <option value="RealEstate_Moody_Modern.cube">🏢 Moody Architectural Contrast</option>
+                            <option value="RealEstate_Teal_And_Orange.cube">🎬 Teal & Orange Cinematic Blockbuster</option>
+                            <option value="RealEstate_Drone_Vibrant.cube">🚁 Drone Vibrant Sky & Foliage</option>
+                            <option value="RealEstate_Night_Luxe.cube">🌙 Night Luxe Cobalt & Gold</option>
+                            <option value="RealEstate_Vintage_Film.cube">🎞️ Vintage Film Matte Black</option>
+                            <option value="RealEstate_Ultra_Sharp_Commercial.cube">💎 Ultra-Sharp Commercial</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-3" style="margin-top:10px;">
                     <div>
                         <label>Video Format & Aspect Ratio:</label>
                         <select id="prFormat">
@@ -146,11 +188,12 @@ const HTML_PAGE = `<!DOCTYPE html>
                     </div>
                 </div>
 
-                <div class="feature-chips">
-                    <div class="chip gold active">🎥 Real Scale Keyframing (100% → 114%)</div>
-                    <div class="chip gold active">🏷️ ₹15 CR Price Badge Injection</div>
-                    <div class="chip gold active">✨ Auto-Slice Multi-Cut Sequencing</div>
-                    <div class="chip gold active">🎚️ Native Premiere Pro XML Timeline</div>
+                <div class="feature-chips" style="margin-top:12px;">
+                    <div class="chip gold active">🎥 Ken Burns Scale Motion Keyframes</div>
+                    <div class="chip gold active">🔇 Intelligent B-Roll Audio Muting</div>
+                    <div class="chip gold active">✨ Middle/End Highlight Sectioning</div>
+                    <div class="chip gold active">🌊 Native Cross Dissolves & Whooshes</div>
+                    <div class="chip gold active">🏷️ ₹15 CR Text Templates Injected</div>
                 </div>
 
                 <!-- BIG MASTER ACTION BUTTON -->
@@ -255,11 +298,15 @@ const HTML_PAGE = `<!DOCTYPE html>
             const format = document.getElementById('prFormat').value;
             const keyframe = document.getElementById('prKeyframe').value;
             const pacing = document.getElementById('prPacing').value;
+            const script = document.getElementById('prScript').value.trim();
+            const section = document.getElementById('prSection').value;
+            const audioMode = document.getElementById('prAudioMode').value;
+            const lut = document.getElementById('prLut').value;
 
-            log('🚀 Starting Premiere Pro AI Auto-Director...');
+            log('🚀 Starting Professional VideoEditorAI for Premiere Pro...');
             log('📁 Reading footage from: ' + folder);
             log('🏷️ Listing: ' + title + ' | ' + price + ' | ' + specs);
-            log('🎬 Applying ' + (format === '9:16' ? '9:16 Vertical Reel' : '16:9 Landscape') + ' with ' + keyframe + ' keyframes...');
+            log('🎬 Pacing: ' + pacing + 's | Trim: ' + section + ' | Audio: ' + audioMode + ' | Grade: ' + lut);
 
             try {
                 const res = await fetch('/api/premiere/auto-edit', {
@@ -271,6 +318,10 @@ const HTML_PAGE = `<!DOCTYPE html>
                         aspectRatio: format,
                         pacingSeconds: pacing,
                         keyframeMode: keyframe,
+                        script: script,
+                        section: section,
+                        audioMode: audioMode,
+                        lut: lut,
                         details: { price, title, specs }
                     })
                 });

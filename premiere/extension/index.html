@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Real Estate Studio for Premiere Pro</title>
+    <title>Professional VideoEditorAI — Premiere Pro Studio</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -12,201 +12,209 @@
         <header class="panel-header">
             <div class="header-left">
                 <span class="header-icon">⚡</span>
-                <span class="header-title">AI Real Estate Studio</span>
+                <div>
+                    <div class="header-title">Professional VideoEditorAI</div>
+                    <div class="header-sub">Premiere Pro Automation Studio</div>
+                </div>
             </div>
-            <div style="display:flex; align-items:center; gap:8px;">
+            <div class="header-right">
                 <div class="status-badge" id="statusBadge">
                     <span class="status-dot"></span>
                     <span id="statusText">Connecting...</span>
                 </div>
-                <button onclick="window.location.reload()" title="Reload Extension UI" style="background:rgba(0,240,255,0.1); border:1px solid rgba(0,240,255,0.3); color:#00F0FF; border-radius:4px; padding:3px 7px; cursor:pointer; font-size:11px;">🔄 Reload</button>
+                <button class="btn-icon" onclick="window.location.reload()" title="Reload Extension UI">🔄</button>
             </div>
         </header>
 
         <!-- NAVIGATION TABS -->
         <div class="panel-tabs">
-            <button class="tab-btn active" onclick="switchTab('footage')">📁 Footage</button>
-            <button class="tab-btn" onclick="switchTab('details')">🏷️ Listing</button>
-            <button class="tab-btn" onclick="switchTab('effects')">🎬 Motion & FX</button>
-            <button class="tab-btn" onclick="switchTab('graphics')">✨ Graphics</button>
+            <button class="tab-btn active" id="tab-btn-footage" onclick="switchTab('footage')">
+                📁 Footage <span class="tab-counter" id="footageCountBadge">0</span>
+            </button>
+            <button class="tab-btn" id="tab-btn-script" onclick="switchTab('script')">
+                🧠 Script AI
+            </button>
+            <button class="tab-btn" id="tab-btn-storyboard" onclick="switchTab('storyboard')">
+                🎬 Storyboard <span class="tab-counter" id="storyboardBadge">0</span>
+            </button>
+            <button class="tab-btn" id="tab-btn-style" onclick="switchTab('style')">
+                🎨 Style & Audio
+            </button>
         </div>
 
         <div class="panel-body">
-            <!-- TAB 1: FOOTAGE FOLDER & SOURCES -->
-            <div id="tab-footage" class="tab-pane active">
+            <!-- TAB 1: FOOTAGE SELECTION & IMPORT -->
+            <div id="tab-pane-footage" class="tab-pane active">
                 <div class="card">
-                    <div class="card-title">1. Video Footage Folder</div>
-                    <label>Enter or Paste Video Folder Path:</label>
-                    <div class="input-with-button">
-                        <input type="text" id="footageFolderInput" value="C:\cllg" placeholder="e.g. C:\cllg or C:\Users\YourName\Videos">
-                        <button class="btn-action" id="btnScanFolder" onclick="scanFootageFolder()">🔍 Scan</button>
+                    <div class="card-title">Select Local Video Files (Any Folder / Drive)</div>
+                    <p class="helper-text">Pick videos from your computer, scan a folder, or drop files below:</p>
+
+                    <input type="file" id="hiddenFilePicker" multiple accept="video/mp4,video/quicktime,video/x-matroska,video/avi" style="display:none;" onchange="handleFileInputChange(event)">
+
+                    <div class="action-btn-row">
+                        <button class="btn-action primary" onclick="browseVideoFiles()">
+                            📂 Browse Video Files...
+                        </button>
+                        <button class="btn-action" onclick="browseVideoFolder()">
+                            📁 Select Folder...
+                        </button>
                     </div>
 
-                    <!-- Quick Folder Presets -->
-                    <div class="preset-chips">
-                        <span class="chip" onclick="setFolder('C:\\cllg')">C:\cllg</span>
-                        <span class="chip" onclick="setFolder('C:\\VideoEditorAI')">C:\VideoEditorAI</span>
-                        <span class="chip" onclick="setFolder('C:\\PREMIERE_PRO_TOOLKIT')">Toolkit</span>
+                    <!-- Manual Folder Input -->
+                    <div class="input-with-button" style="margin-top: 10px;">
+                        <input type="text" id="folderInput" value="C:\cllg" placeholder="e.g. C:\cllg or F:\Footage">
+                        <button class="btn-secondary" onclick="scanLocalFolder()">🔍 Scan</button>
                     </div>
 
-                    <!-- Scanned Files Feedback Badge -->
-                    <div class="scan-result-box" id="scanResultBox">
-                        <div class="scan-status-line">
-                            <span id="scanStatusText">Found 2 video clips ready to edit</span>
-                        </div>
-                        <div class="clip-chips-list" id="clipChipsList">
-                            <span class="clip-chip">video_20261031_175554.mp4</span>
-                            <span class="clip-chip">video_20261031_191136.mp4</span>
-                        </div>
+                    <!-- Drag & Drop Zone -->
+                    <div class="drop-zone" id="dropZone">
+                        <div class="drop-icon">📥</div>
+                        <div class="drop-title">Drop video files here from Windows Explorer</div>
+                        <div class="drop-sub">Supports .MP4, .MOV, .MKV from any local drive</div>
                     </div>
 
-                    <button class="btn-secondary full-width" style="margin-top: 10px;" onclick="useProjectClips()">
-                        🎬 Or Use Videos Currently in Premiere Project Bin
+                    <div class="action-btn-row" style="margin-top: 10px;">
+                        <button class="btn-secondary" onclick="loadProjectClips()">
+                            🔄 Load Clips From Premiere Project Bin
+                        </button>
+                        <button class="btn-text-danger" onclick="clearFootageList()">
+                            🗑️ Clear
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title" id="footageStatusText">Selected Clips</div>
+                    <div class="chips-list-container" id="footageChipsList">
+                        <div class="empty-state">No clips selected. Pick files or scan a folder.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: SCRIPT & PROMPT AI DIRECTOR -->
+            <div id="tab-pane-script" class="tab-pane">
+                <div class="card">
+                    <div class="card-title">AI Script & Prompt Director</div>
+                    <p class="helper-text">Paste your voiceover script or prompt. The AI will auto-detect scene beats, middle/end trims, audio muting, transitions & MOGRTs:</p>
+
+                    <div class="quick-preset-chips">
+                        <span class="chip-preset" onclick="setPresetScript('reel')">⚡ 9:16 Viral Reel</span>
+                        <span class="chip-preset" onclick="setPresetScript('luxury')">🏰 4K Luxury Tour</span>
+                        <span class="chip-preset" onclick="setPresetScript('teaser')">🔥 Urgent Teaser</span>
+                    </div>
+
+                    <textarea id="scriptPromptInput" rows="7" placeholder="e.g.&#10;Hook: Grand exterior entrance with fast push-in, whoosh transition. Title: Smart City Delhi Airport&#10;Scene 1: Middle part of living room, mute camera audio, luxury warm grade. Price: ₹15 CR&#10;Scene 2: Middle section of private elevator, Specs: Per family one floor with private lift&#10;Scene 3: Master bedroom highlight with smooth pull-out reveal&#10;Outro: Ending view of balcony terrace, contact broker card.">Hook: Grand exterior entrance with fast push-in, whoosh transition. Title: Smart City Delhi Airport
+Scene 1: Middle part of living room, mute camera audio, luxury warm grade. Price: ₹15 CR
+Scene 2: Middle section of private elevator, Specs: Per family one floor with private lift
+Scene 3: Master bedroom highlight with smooth pull-out reveal
+Outro: Ending view of balcony terrace, contact broker card.</textarea>
+
+                    <button class="btn-action primary full-width" style="margin-top: 10px;" onclick="analyzeScriptAndGenerate()">
+                        ✨ Analyze Script & Build Storyboard Beats
                     </button>
                 </div>
 
                 <div class="card">
-                    <div class="card-title">Video Format & Timeline Setup</div>
-                    <div class="ratio-selector-grid">
-                        <label class="ratio-card active" onclick="selectRatio('9:16')">
-                            <input type="radio" name="aspectRatio" value="9:16" checked>
-                            <span class="ratio-icon">📱</span>
-                            <span class="ratio-name">9:16 Vertical Reel</span>
-                            <span class="ratio-sub">Instagram • TikTok • Shorts</span>
-                        </label>
-                        <label class="ratio-card" onclick="selectRatio('16:9')">
-                            <input type="radio" name="aspectRatio" value="16:9">
-                            <span class="ratio-icon">🖥️</span>
-                            <span class="ratio-name">16:9 Landscape 4K</span>
-                            <span class="ratio-sub">YouTube • Luxury Website</span>
-                        </label>
+                    <div class="card-title">Listing Details (For Text Templates)</div>
+                    <div class="form-grid">
+                        <div>
+                            <label>Price Tag:</label>
+                            <input type="text" id="propPrice" value="₹15 CR">
+                        </div>
+                        <div>
+                            <label>Property Title:</label>
+                            <input type="text" id="propTitle" value="smart city delhi airport">
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label>Specs & Highlights:</label>
+                            <input type="text" id="propSpecs" value="per family one floor with private lift">
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 2: PROPERTY LISTING DETAILS -->
-            <div id="tab-details" class="tab-pane">
+            <!-- TAB 3: INTERACTIVE STORYBOARD & TRIMS -->
+            <div id="tab-pane-storyboard" class="tab-pane">
                 <div class="card">
-                    <div class="card-title">Property Pricing & Specifications</div>
+                    <div class="card-title">Interactive Storyboard Matrix</div>
+                    <p class="helper-text">Customize every cut before sending to Premiere. Choose Middle/End trims, mute audio, pick transitions, keyframes & titles:</p>
+
+                    <div class="storyboard-container" id="storyboardList">
+                        <!-- Populated dynamically by panel.js -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: STYLE, LUTS & AUDIO -->
+            <div id="tab-pane-style" class="tab-pane">
+                <div class="card">
+                    <div class="card-title">Sequence Aspect Ratio & Pacing</div>
                     
-                    <label>Price Tag (Currency / Amount):</label>
-                    <input type="text" id="propPrice" value="₹15 CR" placeholder="e.g. ₹15 CR or $2,850,000">
-
-                    <label>Property Address / Title:</label>
-                    <input type="text" id="propTitle" value="smart city delhi airport" placeholder="e.g. smart city delhi airport">
-
-                    <label>Property Specs & Unique Features:</label>
-                    <input type="text" id="propSpecs" value="per family one floor with private lift" placeholder="e.g. 4 Beds • 4.5 Baths • 4,200 SQ FT">
-
-                    <label>Agent / Brokerage Contact Info:</label>
-                    <input type="text" id="propAgent" value="+91 98765 43210 • Luxury Homes Delhi" placeholder="Agent Name & Phone">
-                </div>
-            </div>
-
-            <!-- TAB 3: KEYFRAMES, MASKING & PREMIERE ABILITIES -->
-            <div id="tab-effects" class="tab-pane">
-                <div class="card">
-                    <div class="card-title">Keyframing Motion (Ken Burns)</div>
-                    <label>Select Keyframe Animation Style:</label>
-                    <select id="keyframeStyle">
-                        <option value="alternating" selected>✨ Alternating (Push-In on Clip 1, Pull-Out on Clip 2)</option>
-                        <option value="push_in">🔍 Smooth Ken Burns Push-In (100% → 114%)</option>
-                        <option value="pull_out">🔎 Smooth Pull-Out (114% → 100%)</option>
-                        <option value="none">⛔ No Motion (Static Keyframes)</option>
-                    </select>
-
-                    <label style="margin-top: 10px;">Cuts Pacing per Shot:</label>
-                    <div class="slider-row">
-                        <input type="range" id="pacingSlider" min="1.5" max="4.5" step="0.5" value="2.0" oninput="updatePacingDisplay(this.value)">
-                        <span class="slider-val" id="pacingDisplay">2.0s</span>
+                    <div class="ratio-switch-row">
+                        <button class="ratio-btn active" data-ratio="9:16" onclick="selectRatio('9:16')">
+                            📱 9:16 Vertical Reel
+                        </button>
+                        <button class="ratio-btn" data-ratio="16:9" onclick="selectRatio('16:9')">
+                            🖥️ 16:9 Landscape 4K
+                        </button>
                     </div>
-                    <span class="helper-text" id="pacingHelper">Fast-paced viral hook rhythm for Reels</span>
+
+                    <div class="pacing-slider-group" style="margin-top: 14px;">
+                        <div class="slider-header">
+                            <span>Shot Pacing (Cut Duration):</span>
+                            <span class="pacing-val" id="pacingVal">2.2s</span>
+                        </div>
+                        <input type="range" id="pacingSlider" min="1.2" max="6.0" step="0.2" value="2.2" oninput="updatePacingDisplay(this.value)">
+                        <div class="slider-scale">
+                            <span>1.2s Fast</span>
+                            <span>2.2s Reel</span>
+                            <span>4.0s Cinematic</span>
+                            <span>6.0s Tour</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card">
-                    <div class="card-title">Masking & Framing</div>
-                    <label>Aspect Mask Style:</label>
-                    <select id="maskStyle">
-                        <option value="none" selected>Clean Full Frame (No Crop)</option>
-                        <option value="letterbox">Cinematic 2.35:1 Letterbox Bar Mask</option>
-                        <option value="vignette">Soft Vignette Focus Mask</option>
-                    </select>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">Cinematic Color Grade (3D LUTs)</div>
-                    <label>Select Lumetri Grade:</label>
-                    <select id="lutSelect">
+                    <div class="card-title">Cinematic 3D LUT Color Grading</div>
+                    <label>Select Lumetri Color Profile:</label>
+                    <select id="lutSelector">
                         <option value="RealEstate_Luxury_Warm.cube" selected>🌅 Luxury Warm Amber (Golden Hour Glow)</option>
-                        <option value="RealEstate_Clean_Interior.cube">🏠 Clean Interior White (No Yellow Cast)</option>
-                        <option value="RealEstate_Moody_Modern.cube">🏢 Moody Modern Architectural</option>
-                        <option value="none">Original Camera Profile</option>
+                        <option value="RealEstate_Clean_Interior.cube">🏠 Clean Interior Daylight (Pure Whites)</option>
+                        <option value="RealEstate_Moody_Modern.cube">🏢 Moody Architectural Contrast</option>
+                        <option value="RealEstate_Teal_And_Orange.cube">🎬 Teal & Orange Cinematic Blockbuster</option>
+                        <option value="RealEstate_Drone_Vibrant.cube">🚁 Drone Vibrant Sky & Foliage</option>
+                        <option value="RealEstate_Night_Luxe.cube">🌙 Night Luxe Cobalt & Gold</option>
+                        <option value="RealEstate_Vintage_Film.cube">🎞️ Vintage Film Matte Black</option>
+                        <option value="RealEstate_Ultra_Sharp_Commercial.cube">💎 Ultra-Sharp Commercial</option>
                     </select>
                 </div>
-            </div>
 
-            <!-- TAB 4: TEXT TEMPLATES & GRAPHICS -->
-            <div id="tab-graphics" class="tab-pane">
                 <div class="card">
-                    <div class="card-title">1-Click Insert Text Template to Timeline (V2)</div>
-                    <p class="helper-text" style="margin-bottom: 10px;">Inserts native Motion Graphics Templates with your property details:</p>
-                    
-                    <div class="graphics-btn-grid">
-                        <button class="btn-graphic" onclick="insertTemplate('Real_Estate_Hero_Title.mogrt', 0)">
-                            <span class="icon">🏠</span>
-                            <div class="text-group">
-                                <span class="primary">Hero Property Title</span>
-                                <span class="sub">Delhi Airport (0s)</span>
-                            </div>
-                        </button>
-                        <button class="btn-graphic" onclick="insertTemplate('Real_Estate_Price_Tag.mogrt', 2)">
-                            <span class="icon">💰</span>
-                            <div class="text-group">
-                                <span class="primary">Price Badge</span>
-                                <span class="sub">₹15 CR (2s)</span>
-                            </div>
-                        </button>
-                        <button class="btn-graphic" onclick="insertTemplate('Real_Estate_Property_Specs.mogrt', 4)">
-                            <span class="icon">📋</span>
-                            <div class="text-group">
-                                <span class="primary">Specs Lower 3rd</span>
-                                <span class="sub">Private Lift (4s)</span>
-                            </div>
-                        </button>
-                        <button class="btn-graphic" onclick="insertTemplate('Real_Estate_Feature_Callout.mogrt', 6)">
-                            <span class="icon">✨</span>
-                            <div class="text-group">
-                                <span class="primary">Feature Callout</span>
-                                <span class="sub">One Floor / Family (6s)</span>
-                            </div>
-                        </button>
-                        <button class="btn-graphic" onclick="insertTemplate('Just_Listed_Badge.mogrt', 1)">
-                            <span class="icon">🔥</span>
-                            <div class="text-group">
-                                <span class="primary">Just Listed Ribbon</span>
-                                <span class="sub">Urgency Badge (1s)</span>
-                            </div>
-                        </button>
-                        <button class="btn-graphic" onclick="insertTemplate('Real_Estate_Agent_Outro.mogrt', 8)">
-                            <span class="icon">👤</span>
-                            <div class="text-group">
-                                <span class="primary">Agent Outro Card</span>
-                                <span class="sub">Contact & Logo (8s)</span>
-                            </div>
-                        </button>
-                    </div>
+                    <div class="card-title">Audio & Sound FX Engine</div>
+                    <label class="checkbox-row">
+                        <input type="checkbox" id="checkAutoMute" checked>
+                        <span>🔇 Mute B-Roll Camera Audio (Recommended for reels with VO/Music)</span>
+                    </label>
+                    <label class="checkbox-row">
+                        <input type="checkbox" id="checkInjectSfx" checked>
+                        <span>🔊 Inject Cinematic Whoosh & Sub-Boom SFX on transitions</span>
+                    </label>
                 </div>
             </div>
         </div>
 
         <!-- MASTER ACTION BAR (STICKY AT BOTTOM) -->
         <footer class="panel-footer">
-            <button class="btn-master" id="btnMasterAutoEdit" onclick="executeMasterAutoEdit()">
-                <span class="btn-master-icon">⚡</span>
-                <span class="btn-master-text">AUTO-EDIT TIMELINE IN PREMIERE</span>
+            <button class="btn-master" id="btnBuildTimeline" onclick="executeProfessionalTimeline()">
+                ⚡ BUILD TIMELINE IN PREMIERE PRO
             </button>
-            <div class="live-status-log" id="statusLog">
-                Ready. Click to auto-cut videos, apply keyframes & build timeline.
+            <div class="footer-sub-row">
+                <button class="btn-sub-action" onclick="exportAndLaunchXml()">
+                    📄 Export Native XML Project
+                </button>
+                <div class="live-status-log" id="liveLog">
+                    Ready. Select footage or analyze script to build edit.
+                </div>
             </div>
         </footer>
     </div>
